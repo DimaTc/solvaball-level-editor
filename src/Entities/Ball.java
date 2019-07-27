@@ -1,6 +1,7 @@
 package Entities;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
@@ -11,14 +12,25 @@ public class Ball extends Entity {
     private boolean selected = false;
     private int textOffset = 8;
     private int drawOffset;
-
     public Ball(double x, double y, double width, double height, int indexX, int indexY, int drawOffset) {
         super(x, y, width, height, indexX, indexY);
         this.drawOffset = drawOffset;
         setOnMouseClicked(event -> {
-            this.selected = !selected;
-            getActionHandler().ballSelectionChanged(this);
+            if (event.getButton() == MouseButton.SECONDARY)
+                getActionHandler().onEntityRightClick(event, this);
+            else {
+                this.selected = !selected;
+                getActionHandler().ballSelectionChanged(this);
+            }
         });
+    }
+
+    public int getMoves() {
+        return moves;
+    }
+
+    public void setMoves(int moves) {
+        this.moves = moves;
     }
 
     public boolean isSelected() {

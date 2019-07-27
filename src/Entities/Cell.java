@@ -1,6 +1,6 @@
 package Entities;
 
-import Entities.Logic.GameLogic;
+import Logic.GameLogic;
 import Entities.Tiles.WallTile;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -16,7 +16,6 @@ public class Cell extends Entity {
     Cell(double x, double y, double width, double height, int indexX, int indexY) {
         super(x, y, width, height, indexX, indexY);
         setOnMouseClicked(event -> {
-            System.out.println("aaa");
             if (suggested) {
                 getActionHandler().onSuggestedCellClicked(this);
             } else if (selectedEntity != null && gameLogic.isEditMode())

@@ -1,4 +1,4 @@
-import Entities.Handlers.ActionHandler;
+import Handlers.ActionHandler;
 import Entities.Tiles.TileType;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;

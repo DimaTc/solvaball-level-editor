@@ -1,6 +1,6 @@
 package Entities;
 
-import Entities.Handlers.ActionHandler;
+import Handlers.ActionHandler;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Region;
 
@@ -92,4 +92,13 @@ public abstract class Entity extends Region {
         return false;
 
     }
+
+    public int getLineDistance(Entity entity) {
+        if (entity.getIndexY() == indexY)
+            return Math.abs(entity.getIndexX() - indexX);
+        else if (entity.getIndexX() == indexX)
+            return Math.abs(entity.getIndexY() - indexY);
+        return 0;
+    }
+
 }

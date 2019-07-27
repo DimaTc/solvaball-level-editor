@@ -9,7 +9,6 @@ public class SandTile extends Tile {
         super(cell, offset);
         setTileColor(Color.ORANGE);
         setTileCost(1);
-        setOnMouseClicked(event -> System.out.println("Test?"));
     }
 
 }

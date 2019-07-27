@@ -1,11 +1,10 @@
 package Entities;
 
-import Entities.Handlers.ActionHandler;
-import Entities.Logic.GameLogic;
 import Entities.Tiles.Tile;
 import Entities.Tiles.TileFactory;
 import Entities.Tiles.TileType;
-import javafx.event.EventHandler;
+import Handlers.ActionHandler;
+import Logic.GameLogic;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -20,13 +19,20 @@ public class CellGrid extends Entity {
     private ArrayList<Cell> cells;
     private TileType selectedType = TileType.END_TILE;
     private GameLogic gameLogic = GameLogic.getInstance();
-
     public CellGrid(double x, double y, double width, double height, int size) {
         super(x, y, width, height);
         this.size = size;
         setOnMouseClicked(this::fireEventInCell);
         cells = new ArrayList<>();
         initGrid();
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
     }
 
     private void initGrid() {
@@ -44,14 +50,12 @@ public class CellGrid extends Entity {
             for (Cell cell : cells) {
                 //hardcoded -26 because there is an offset because the menu and title bar and it just an level editor
                 if (cell.contains(e.getX() + getX(), e.getY() + getY() - 26)) {
-                    System.out.println("Cell Grid Click");
                     if (gameLogic.isEditMode()) {
                         Tile tile = TileFactory.getTile(selectedType, cell);
                         tile.setOnActionListener(getActionHandler());
                         if (e.getButton() == MouseButton.PRIMARY)
                             cell.toggleEntity(tile);
                     }
-                    EventHandler t = cell.getOnMouseClicked();
                     cell.fireEvent(e);
                     return;
                 }
@@ -81,6 +85,13 @@ public class CellGrid extends Entity {
 
     public void setSelectedType(TileType selectedType) {
         this.selectedType = selectedType;
+    }
+
+    public Cell getCell(int indexX, int indexY) {
+        for (Cell cell : cells)
+            if (cell.getIndexY() == indexY && cell.getIndexX() == indexX)
+                return cell;
+        return null;
     }
 
     public ArrayList<Cell> getCells() {

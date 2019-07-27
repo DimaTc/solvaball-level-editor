@@ -2,19 +2,17 @@ import Entities.Ball;
 import Entities.Cell;
 import Entities.CellGrid;
 import Entities.Entity;
-import Entities.Handlers.ActionHandler;
-import Entities.Logic.GameLogic;
 import Entities.Tiles.EndTile;
 import Entities.Tiles.Tile;
 import Entities.Tiles.TileType;
 import Entities.Tiles.WallTile;
+import Handlers.ActionHandler;
+import Logic.GameLogic;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -27,14 +25,15 @@ public class CanvasPanel extends Canvas implements ActionHandler {
     private ArrayList<Entity> entities;
     private CellGrid cellGrid;
     private GraphicsContext gc;
-    private ContextMenu menu;
+    private ContextMenu wallMenu;
+    private ContextMenu ballMenu;
     private GameLogic gameLogic = GameLogic.getInstance();
     private int gridSize = 7;
 
     public CanvasPanel(double width, double height) {
         entities = new ArrayList<>();
-        initContextMenu();
-
+        initWallContextMenu();
+        initBallContextMenu();
         setHeight(width);
         setWidth(height);
         gc = getGraphicsContext2D();
@@ -49,7 +48,9 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         gameLogic.setHandler(this);
 
         setEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-            menu.hide();
+            wallMenu.hide();
+            ballMenu.hide();
+
             for (Entity entity : entities) {
                 if (entity.contains(event.getX(), event.getY()))
                     entity.fireEvent(event);
@@ -67,8 +68,25 @@ public class CanvasPanel extends Canvas implements ActionHandler {
 
     }
 
-    private void initContextMenu() {
-        menu = new ContextMenu();
+    private void initBallContextMenu() {
+        ballMenu = new ContextMenu();
+        CustomMenuItem textMovesItem = new CustomMenuItem();
+        textMovesItem.setHideOnClick(false);
+        CustomMenuItem confirmButtonItem = new CustomMenuItem();
+        TextField movesField = new TextField();
+        movesField.textProperty().addListener((e, o, n) -> {
+            if (!n.matches("\\d*"))
+                movesField.setText(n.replaceAll("[^\\d]", ""));
+        });
+        Button confirmButton = new Button("Save");
+        textMovesItem.setContent(movesField);
+        confirmButtonItem.setContent(confirmButton);
+        ballMenu.getItems().addAll(textMovesItem, confirmButtonItem);
+
+    }
+
+    private void initWallContextMenu() {
+        wallMenu = new ContextMenu();
         CustomMenuItem upMenuItem = new CustomMenuItem();
         CustomMenuItem rightMenuItem = new CustomMenuItem();
         CustomMenuItem bottomMenuItem = new CustomMenuItem();
@@ -81,7 +99,7 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         rightMenuItem.setContent(rightButton);
         bottomMenuItem.setContent(bottomButton);
         leftMenuItem.setContent(leftButton);
-        menu.getItems().addAll(upMenuItem, rightMenuItem, bottomMenuItem, leftMenuItem);
+        wallMenu.getItems().addAll(upMenuItem, rightMenuItem, bottomMenuItem, leftMenuItem);
 
     }
 
@@ -112,13 +130,29 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         cellGrid.setSelectedType(tileType);
     }
 
+    @Override
+    public void onEntityRightClick(MouseEvent event, Entity entity) {
+        ballMenu.hide();
+        if (entity instanceof Ball) {
+            TextField textField = (TextField) ((CustomMenuItem) ballMenu.getItems().get(0)).getContent();
+            textField.setText(String.valueOf(((Ball) entity).getMoves()));
+            Button submit = (Button) ((CustomMenuItem) ballMenu.getItems().get(1)).getContent();
+            submit.setOnAction(e -> {
+                ((Ball) entity).setMoves(Integer.valueOf(textField.getText()));
+                redraw();
+            });
+            ballMenu.show(this, event.getScreenX(), event.getScreenY());
+
+        }
+
+    }
 
     @Override
     public void onTileRightClick(MouseEvent event, Tile tile) {
         if (tile instanceof WallTile) {
             for (int i = 0; i < WallTile.Direction.values().length; i++) {
                 //0 up  | 1 right | 2 down | 3 left
-                CheckBox menuCheckBox = ((CheckBox) ((CustomMenuItem) menu.getItems().get(i)).getContent());
+                CheckBox menuCheckBox = ((CheckBox) ((CustomMenuItem) wallMenu.getItems().get(i)).getContent());
                 menuCheckBox.setSelected(false); //reset
                 int finalI = i;
                 menuCheckBox.setOnAction(event1 -> {
@@ -128,9 +162,9 @@ public class CanvasPanel extends Canvas implements ActionHandler {
                 if (((WallTile) tile).getDirections().contains(WallTile.Direction.values()[i]))
                     menuCheckBox.setSelected(true);
             }
-            menu.show(this, event.getScreenX(), event.getScreenY());
+            wallMenu.show(this, event.getScreenX(), event.getScreenY());
         } else
-            menu.hide();
+            wallMenu.hide();
     }
 
     @Override
@@ -139,9 +173,12 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         ArrayList<Cell> cells = cellGrid.getCells();
         for (Cell cell : cells) {
             if (cell.getSelectedEntity() instanceof EndTile) {
+                if (((EndTile) cell.getSelectedEntity()).getBounded() != null)
+                    continue;
                 Ball ball = new Ball(cell.getX(), cell.getY(),
                         cell.getWidth(), cell.getHeight(), cell.getIndexX(), cell.getIndexY(), 10);
                 if (!entities.contains(ball)) {
+                    ((EndTile) cell.getSelectedEntity()).setBounded(ball);
                     ball.setOnActionListener(this);
                     entities.add(ball);
 //                    gameLogic.addEntity(ball);

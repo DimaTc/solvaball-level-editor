@@ -1,5 +1,6 @@
 import Entities.Tiles.TileType;
 import Handlers.ActionHandler;
+import Logic.GameLogic;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -54,6 +55,12 @@ public class ControlPanel extends MenuBar {
         CustomMenuItem editModeSelectItem = new CustomMenuItem();
         editButton.setOnAction(event -> {
             if (editButton.isSelected()) actionHandler.onEditSelected();
+        });
+        GameLogic.getInstance().setOnEditModeChanged(editMode -> {
+            if (editMode)
+                editButton.setSelected(true);
+            else
+                runButton.setSelected(true);
         });
         editModeSelectItem.setContent(editButton);
         editModeSelectItem.setHideOnClick(false);

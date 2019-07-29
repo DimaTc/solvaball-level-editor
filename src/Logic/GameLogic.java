@@ -19,6 +19,7 @@ public class GameLogic {
     private Ball selectedBall;
     private ArrayList<Entity> entities; //probably always will be balls
     private ActionHandler handler;
+    private EditModeChangeHandler editHandler;
 
     private GameLogic() {
         entities = new ArrayList<>();
@@ -39,6 +40,8 @@ public class GameLogic {
 
     public void setEditMode(boolean editMode) {
         this.editMode = editMode;
+        if (editHandler != null)
+            editHandler.onEditModeChanged(editMode);
     }
 
     public void selectBall(Ball ball) {
@@ -97,7 +100,12 @@ public class GameLogic {
         entities.add(ball);
 
     }
-//
+
+    public void setOnEditModeChanged(EditModeChangeHandler editHandler) {
+        this.editHandler = editHandler;
+    }
+
+    //
 //    public void addEntity(EntityType type, int indexX, int indexY) {
 //        if (type == EntityType.BALL) {
 //            Cell cell = mainGrid.getCell(indexX, indexY);
@@ -245,6 +253,11 @@ public class GameLogic {
         deselectBall();
         getMainGrid().reset();
         entities.clear();
+        setEditMode(true);
         handler.onRedraw();
+    }
+
+    public interface EditModeChangeHandler {
+        void onEditModeChanged(boolean isEdit);
     }
 }

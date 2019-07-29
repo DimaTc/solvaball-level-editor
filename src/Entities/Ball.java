@@ -1,5 +1,6 @@
 package Entities;
 
+import Logic.GameLogic;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
@@ -11,19 +12,38 @@ public class Ball extends Entity {
     private int moves = 0;
     private boolean selected = false;
     private int textOffset = 8;
-    private int drawOffset;
+    private int drawOffset = 10;
+
+    public Ball(Cell cell, int moves) {
+        this(cell);
+        this.moves = moves;
+    }
+
+    public Ball(Cell cell) {
+        this(cell.getX(), cell.getY(), cell.getWidth(), cell.getHeight(), cell.getIndexX(), cell.getIndexY(), 10);
+    }
+
+
     public Ball(double x, double y, double width, double height, int indexX, int indexY, int drawOffset) {
         super(x, y, width, height, indexX, indexY);
         this.drawOffset = drawOffset;
+        init();
+    }
+
+    private void init() {
         setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY)
                 getActionHandler().onEntityRightClick(event, this);
             else {
+                if (GameLogic.getInstance().isEditMode())
+                    return;
                 this.selected = !selected;
                 getActionHandler().ballSelectionChanged(this);
             }
         });
+
     }
+
 
     public int getMoves() {
         return moves;
@@ -71,5 +91,10 @@ public class Ball extends Entity {
 
         gc.setFill(tmpFill);
         gc.setStroke(tmpStroke);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("b %d %d %d", getIndexX(), getIndexY(), moves);
     }
 }

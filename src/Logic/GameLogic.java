@@ -4,8 +4,7 @@ import Entities.Ball;
 import Entities.Cell;
 import Entities.CellGrid;
 import Entities.Entity;
-import Entities.Tiles.IceTile;
-import Entities.Tiles.Tile;
+import Entities.Tiles.*;
 import Handlers.ActionHandler;
 
 import java.util.ArrayList;
@@ -50,17 +49,18 @@ public class GameLogic {
         for (Cell cell : mainGrid.getCells())   //Should be filtered - will do it in the game
             cell.setSuggested(false);           //Reset before
         ArrayList<Cell> suggestedCells = suggestionLogicFilter(mainGrid.getAdjacentCells(ball.getIndexX(),
-                ball.getIndexY(), 2), ball);
+                ball.getIndexY(), 1), ball);
         for (Cell cell : suggestedCells) {
             cell.setSuggested(true);
         }
         handler.onRedraw();
     }
 
-    public void deselectBall(Ball ball) {
-
+    public void deselectBall() {
+        if (selectedBall == null)
+            return;
+        selectedBall.setSelected(false);
         selectedBall = null;
-        ball.setSelected(false);
         for (Cell cell : mainGrid.getCells())
             cell.setSuggested(false);
     }
@@ -89,9 +89,23 @@ public class GameLogic {
         this.entities = entities;
     }
 
-    public void addEntity(Ball ball) {
+    public void addBall(int indexX, int indexY, int moves) {
+        Cell cell = mainGrid.getCell(indexX, indexY);
+        cell.setOccupied(true);
+        Ball ball = new Ball(cell, moves);
+        ball.setOnActionListener(getHandler());
         entities.add(ball);
+
     }
+//
+//    public void addEntity(EntityType type, int indexX, int indexY) {
+//        if (type == EntityType.BALL) {
+//            Cell cell = mainGrid.getCell(indexX, indexY);
+//            Ball ball = new Ball(cell);
+//            entities.add(ball);
+//        }
+//
+//    }
 
     public void moveToCell(Cell cell) {
         int moves = 1;
@@ -114,37 +128,44 @@ public class GameLogic {
             }
             if (checkSpace == null) {
                 Cell tmpCell = mainGrid.getCell(ballX, ballY);
-                if (!(tmpCell.getSelectedEntity() instanceof IceTile)) {
+                if (!(tmpCell.getTile() instanceof IceTile)) {
                     Ball ball = new Ball(tmpCell.getX(), tmpCell.getY(),
                             tmpCell.getWidth(), tmpCell.getHeight(), ballX, ballY, 10);
                     ball.setOnActionListener(handler);
+                    tmpCell.setOccupied(true);
                     entities.add(ball);
                 }
             }
         }
         if (selectedBall == null)
             return;
-        Entity tile = cell.getSelectedEntity();
+        Tile tile = cell.getTile();
         if (tile != null) {
-            if (tile instanceof Tile)
-                moves += ((Tile) tile).getTileCost();
+//            if (tile instanceof Tile)
+            moves += ((Tile) tile).getTileCost();
         }
+        Cell tmpCell = mainGrid.getCell(startX, startY);
+        tmpCell.setOccupied(false);
+        cell.setOccupied(true);
         selectedBall.moveTo(cell, moves);
-        deselectBall(selectedBall);
+        deselectBall();
         handler.onRedraw();
     }
 
     private ArrayList<Cell> suggestionLogicFilter(ArrayList<Cell> cells, Ball ball) {
         ArrayList<Cell> suggested = new ArrayList<>();
         for (Cell cell : cells) {
-            if (cell.getSelectedEntity() instanceof IceTile) {
-                if (cell.getLineDistance(ball) > 1)
+
+            int cellX = cell.getIndexX();
+            int cellY = cell.getIndexY();
+            int dx = cell.getIndexX() - ball.getIndexX();
+            int dy = cell.getIndexY() - ball.getIndexY();
+            if (!verifyNewCell(mainGrid.getCell(ball.getIndexX(), ball.getIndexY()), cell) && !(cell.getTile() instanceof IceTile))
+                continue;
+            if (cell.getTile() instanceof IceTile) {
+                if (cell.getLineDistance(ball) > 1) //irrelevant with the new design
                     continue;
                 else {
-                    int cellX = cell.getIndexX();
-                    int cellY = cell.getIndexY();
-                    int dx = cell.getIndexX() - ball.getIndexX();
-                    int dy = cell.getIndexY() - ball.getIndexY();
                     for (int i = 0; i < mainGrid.getSize(); i++) {
                         cellX += dx;
                         cellY += dy;
@@ -153,20 +174,77 @@ public class GameLogic {
                         if (cellX < 0 || cellY < 0)
                             break;
                         Cell newCell = mainGrid.getCell(cellX, cellY);
-                        if (newCell == null)
-                            break;
-                        if (!(newCell.getSelectedEntity() instanceof IceTile)) {
+                        if (verifyNewCell(cell, newCell))
                             suggested.add(newCell);
+                        if (newCell == null || !(newCell.getTile() instanceof IceTile))
                             break;
-                        }
+
                     }
                     continue;
                 }
-            }
-
+            } else if (!cell.isOccupied()) {
+                Cell newCell = mainGrid.getCell(cellX + dx, cellY + dy);
+                if (verifyNewCell(cell, newCell))
+                    suggested.add(newCell);
+            } else continue;
             suggested.add(cell);
         }
         return suggested;
     }
 
+    private boolean verifyNewCell(Cell oldCell, Cell newCell) {
+        if (newCell == null)
+            return false;
+        if (newCell.getTile() instanceof IceTile)
+            return false;
+        if (newCell.isOccupied())
+            return false;
+        if (newCell.getTile() instanceof WallTile)
+            if (((WallTile) newCell.getTile()).isBlocking(oldCell))
+                return false;
+        if (oldCell.getTile() instanceof WallTile)
+            return !((WallTile) oldCell.getTile()).isBlocking(newCell);
+        return true;
+    }
+
+    public void addTile(TileType type, int indexX, int indexY, int[] args) {
+        Cell cell = mainGrid.getCell(indexX, indexY);
+        Tile tile = null;
+        switch (type) {
+            case END_TILE:
+                if (args != null && args.length > 0)
+                    tile = new EndTile(cell, args[0] == 1);
+                else
+                    tile = new EndTile(cell);
+                break;
+            case ICE_TILE:
+                tile = new IceTile(cell);
+                break;
+            case SAND_TILE:
+                tile = new SandTile(cell);
+                break;
+            case WALL_TILE:
+                if (args != null && args.length > 0)
+                    tile = new WallTile(cell, args);
+                break;
+            case BATTERY_TILE:
+                tile = new BatteryTile(cell);
+                break;
+        }
+        if (tile != null) {
+            cell.setTile(tile);
+            tile.setOnActionListener(handler);
+        }
+    }
+
+    public Ball getSelectedBall() {
+        return selectedBall;
+    }
+
+    public void reset() {
+        deselectBall();
+        getMainGrid().reset();
+        entities.clear();
+        handler.onRedraw();
+    }
 }

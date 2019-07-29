@@ -83,6 +83,8 @@ public abstract class Entity extends Region {
 
     @Override
     public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
         if (obj.getClass().equals(this.getClass())) {
             Entity o = (Entity) obj;
             if (o.getX() == x && o.getY() == y)

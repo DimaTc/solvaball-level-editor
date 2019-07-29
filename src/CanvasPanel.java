@@ -50,7 +50,7 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         setEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
             wallMenu.hide();
             ballMenu.hide();
-
+            Ball selectedBall = gameLogic.getSelectedBall();
             for (Entity entity : entities) {
                 if (entity.contains(event.getX(), event.getY()))
                     entity.fireEvent(event);
@@ -61,7 +61,8 @@ public class CanvasPanel extends Canvas implements ActionHandler {
             } else if (cellGrid.contains(event.getX(), event.getY())) {
                 cellGrid.fireEvent(event);
             }
-
+            if (selectedBall != null && selectedBall.equals(gameLogic.getSelectedBall()))
+                gameLogic.deselectBall();
             draw(gc);
 
         });
@@ -172,15 +173,16 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         gameLogic.setEditMode(false);
         ArrayList<Cell> cells = cellGrid.getCells();
         for (Cell cell : cells) {
-            if (cell.getSelectedEntity() instanceof EndTile) {
-                if (((EndTile) cell.getSelectedEntity()).getBounded() != null)
+            if (cell.getTile() instanceof EndTile) {
+                if (((EndTile) cell.getTile()).getBounded())
                     continue;
                 Ball ball = new Ball(cell.getX(), cell.getY(),
                         cell.getWidth(), cell.getHeight(), cell.getIndexX(), cell.getIndexY(), 10);
                 if (!entities.contains(ball)) {
-                    ((EndTile) cell.getSelectedEntity()).setBounded(ball);
+                    ((EndTile) cell.getTile()).setBounded(true);
                     ball.setOnActionListener(this);
                     entities.add(ball);
+                    cell.setOccupied(true);
 //                    gameLogic.addEntity(ball);
                 }
             }
@@ -202,7 +204,7 @@ public class CanvasPanel extends Canvas implements ActionHandler {
         if (ball.isSelected())
             gameLogic.selectBall(ball);
         else
-            gameLogic.deselectBall(ball);
+            gameLogic.deselectBall();
     }
 
     @Override

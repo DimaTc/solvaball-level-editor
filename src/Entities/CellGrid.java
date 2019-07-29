@@ -19,6 +19,7 @@ public class CellGrid extends Entity {
     private ArrayList<Cell> cells;
     private TileType selectedType = TileType.END_TILE;
     private GameLogic gameLogic = GameLogic.getInstance();
+
     public CellGrid(double x, double y, double width, double height, int size) {
         super(x, y, width, height);
         this.size = size;
@@ -35,6 +36,17 @@ public class CellGrid extends Entity {
         this.size = size;
     }
 
+    public void reset(int size) {
+        cells.clear();
+        this.size = size;
+        setSelectedType(TileType.END_TILE);
+        initGrid();
+    }
+
+    public void reset() {
+        reset(size);
+    }
+
     private void initGrid() {
         double cellWidth = getWidth() / size;
         double cellHeight = getHeight() / size;
@@ -42,6 +54,7 @@ public class CellGrid extends Entity {
             for (int j = 0; j < size; j++) {
                 Cell cell = new Cell(getX() + i * cellWidth, getY() + j * cellHeight, cellWidth, cellHeight, i, j);
                 cells.add(cell);
+                cell.setOnActionListener(getActionHandler());
             }
     }
 

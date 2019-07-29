@@ -19,7 +19,7 @@ public class TileFactory {
                 tile = new IceTile(cell, 10);
                 break;
             case WALL_TILE:
-                tile = new WallTile(cell, 10);
+                tile = new WallTile(cell);
                 break;
             default:
                 break;

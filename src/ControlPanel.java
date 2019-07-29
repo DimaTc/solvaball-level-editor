@@ -1,7 +1,10 @@
-import Handlers.ActionHandler;
 import Entities.Tiles.TileType;
+import Handlers.ActionHandler;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+
+import java.io.File;
 
 public class ControlPanel extends MenuBar {
 
@@ -15,7 +18,7 @@ public class ControlPanel extends MenuBar {
 
     public ControlPanel() {
         levelManager = LevelManager.getInstance();
-        newMenuBtn = new Menu("New");
+        newMenuBtn = new Menu();
         modeMenuBtn = new Menu("Change Mode...");
         saveMenuBtn = new Menu("Save");
         loadMenuBtn = new Menu("Load");
@@ -26,6 +29,17 @@ public class ControlPanel extends MenuBar {
 
     private void initButtons() {
         //Mode Initialization
+        Label label = new Label("Reset");
+        label.setOnMouseClicked(e -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Reset the level?",
+                    ButtonType.YES, ButtonType.CANCEL);
+            alert.showAndWait();
+            if (alert.getResult() == ButtonType.YES) {
+                levelManager.newLevel();
+                actionHandler.onRedraw();
+            }
+        });
+        newMenuBtn.setGraphic(label);
         ToggleGroup toggleGroup = new ToggleGroup();
         RadioButton editButton = new RadioButton("Edit Mode");
         editButton.setSelected(true);
@@ -49,13 +63,39 @@ public class ControlPanel extends MenuBar {
         modeMenuBtn.getItems().addAll(editModeSelectItem, runModeSelectItem);
         //////////////////////////////////////////////////
         //Save Initialization
-        MenuItem appendSaveButton = new MenuItem("Save level #" + levelManager.getLastLevel());
+        MenuItem appendSaveButton = new MenuItem("Save level (#" + (levelManager.getLastLevel() + 1) + ")");
         MenuItem saveAsButton = new MenuItem("Save as...");
         saveMenuBtn.getItems().addAll(appendSaveButton, saveAsButton);
         //////////////////////////////////////////////////
         // Load Initialization
         MenuItem loadLastLevelButton = new MenuItem("Load last level (#" + levelManager.getLastLevel() + ")");
+        loadLastLevelButton.setOnAction(event -> {
+            boolean res = levelManager.loadLevel();
+            actionHandler.onRedraw();
+        });
+        if (levelManager.getLastLevel() == 0)
+            loadLastLevelButton.setDisable(true);
+        appendSaveButton.setOnAction(event -> {
+                    levelManager.saveLevel();
+                    loadLastLevelButton.setDisable(false);
+                }
+        );
+
+        saveAsButton.setOnAction(event -> {
+            String filePath = getFilePath(true);
+            if (filePath.length() == 0)
+                return;
+            levelManager.saveLevel(filePath);
+        });
         MenuItem loadLevelFromFile = new MenuItem("Load from file");
+        loadLevelFromFile.setOnAction(event -> {
+                    String filePath = getFilePath(false);
+                    if (filePath.length() == 0)
+                        return;
+                    levelManager.loadLevel(filePath);
+                    actionHandler.onRedraw();
+                }
+        );
         loadMenuBtn.getItems().addAll(loadLastLevelButton, loadLevelFromFile);
         //////////////////////////////////////////////////
         // Tiles Initialization
@@ -106,6 +146,28 @@ public class ControlPanel extends MenuBar {
 
         tileMenuBtn.getItems().addAll(endMenuItem, iceMenuItem, sandMenuItem, batteryMenuItem, wallMenuItem);
         //////////////////////////////////////////////////
+        levelManager.setOnLevelChanged(e -> {
+            appendSaveButton.setText("Save last level (#" + (e + 1) + ")");
+            loadLastLevelButton.setText("Load last level (#" + e + ")");
+            if (e <= 0)
+                loadLastLevelButton.setDisable(true);
+        });
+
+    }
+
+    private String getFilePath(boolean save) {
+        FileChooser fileChooser = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("Dat files (*.dat)", "*.dat");
+        fileChooser.getExtensionFilters().add(filter);
+        fileChooser.setInitialDirectory(new File("./levels"));
+        File file;
+        if (save)
+            file = fileChooser.showSaveDialog(this.getContextMenu());
+        else
+            file = fileChooser.showOpenDialog(this.getContextMenu());
+        if (file == null)
+            return "";
+        return file.getPath();
     }
 
     public void setActionHandler(ActionHandler actionHandler) {

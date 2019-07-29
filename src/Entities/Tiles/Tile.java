@@ -9,14 +9,15 @@ public abstract class Tile extends Entity {
 
     private int tileCost;
     private Color tileColor;
-    private int fillOffset = 0;
+    private int fillOffset = 10;
 
     public Tile(double x, double y, double width, double height) {
         super(x, y, width, height);
     }
 
     public Tile(Cell cell) {
-        super(cell.getX(), cell.getY(), cell.getWidth(), cell.getHeight());
+        super(cell.getX(), cell.getY(), cell.getWidth(), cell.getHeight(),
+                cell.getIndexX(), cell.getIndexY());
     }
 
     public Tile(Cell cell, int fillOffset) {

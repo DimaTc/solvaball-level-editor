@@ -105,7 +105,6 @@ public class GameLogic {
         this.editHandler = editHandler;
     }
 
-    //
 //    public void addEntity(EntityType type, int indexX, int indexY) {
 //        if (type == EntityType.BALL) {
 //            Cell cell = mainGrid.getCell(indexX, indexY);

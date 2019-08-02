@@ -25,4 +25,6 @@ public interface ActionHandler {
     void onEntityRightClick(MouseEvent event, Entity entity);
 
     void onSuggestedCellClicked(Cell cell);
+
+    void onGridSizeChanged(int newSize);
 }

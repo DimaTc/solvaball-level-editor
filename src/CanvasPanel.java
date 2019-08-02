@@ -28,7 +28,7 @@ public class CanvasPanel extends Canvas implements ActionHandler {
     private ContextMenu wallMenu;
     private ContextMenu ballMenu;
     private GameLogic gameLogic = GameLogic.getInstance();
-    private int gridSize = 7;
+    private int gridSize = 5;
 
     public CanvasPanel(double width, double height) {
         entities = new ArrayList<>();
@@ -215,5 +215,11 @@ public class CanvasPanel extends Canvas implements ActionHandler {
     @Override
     public void onSuggestedCellClicked(Cell cell) {
         gameLogic.moveToCell(cell);
+    }
+
+    @Override
+    public void onGridSizeChanged(int newSize) {
+        this.gridSize = newSize;
+        gameLogic.reset();
     }
 }

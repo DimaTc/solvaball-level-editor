@@ -6,41 +6,61 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class ControlPanel extends MenuBar {
 
-    private Menu newMenuBtn;
+    private Menu resetMenuButton;
     private Menu modeMenuBtn;
     private Menu saveMenuBtn;
     private Menu loadMenuBtn;
     private Menu tileMenuBtn;
+    private Menu gridSizeMenuBtn;
     private LevelManager levelManager;
     private ActionHandler actionHandler;
 
     public ControlPanel() {
         levelManager = LevelManager.getInstance();
-        newMenuBtn = new Menu();
+        resetMenuButton = new Menu();
         modeMenuBtn = new Menu("Change Mode...");
         saveMenuBtn = new Menu("Save");
         loadMenuBtn = new Menu("Load");
         tileMenuBtn = new Menu("Tiles...");
+        gridSizeMenuBtn = new Menu();
         initButtons();
-        getMenus().addAll(newMenuBtn, modeMenuBtn, saveMenuBtn, loadMenuBtn, tileMenuBtn);
+        getMenus().addAll(resetMenuButton, modeMenuBtn, saveMenuBtn, loadMenuBtn, tileMenuBtn, gridSizeMenuBtn);
     }
 
     private void initButtons() {
         //Mode Initialization
-        Label label = new Label("Reset");
-        label.setOnMouseClicked(e -> {
+        Label resetLabel = new Label("Reset");
+        resetLabel.setOnMouseClicked(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Reset the level?",
                     ButtonType.YES, ButtonType.CANCEL);
+            alert.setHeaderText(null);
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
                 levelManager.newLevel();
                 actionHandler.onRedraw();
             }
         });
-        newMenuBtn.setGraphic(label);
+        resetMenuButton.setGraphic(resetLabel);
+        Label gridSizeLabel = new Label("Grid Size");
+        ArrayList<Integer> choices = new ArrayList<>();
+        for (int i = 3; i < 8; i++)
+            choices.add(i);
+        gridSizeLabel.setOnMouseClicked(e -> {
+
+            ChoiceDialog<Integer> dialog = new ChoiceDialog<>(5, choices);
+            dialog.setHeaderText(null);
+            dialog.setTitle("Grid Size");
+            dialog.setContentText("Choose the grid size:");
+            Optional<Integer> res = dialog.showAndWait();
+            res.ifPresent(actionHandler::onGridSizeChanged);
+
+        });
+        gridSizeMenuBtn.setGraphic(gridSizeLabel);
         ToggleGroup toggleGroup = new ToggleGroup();
         RadioButton editButton = new RadioButton("Edit Mode");
         editButton.setSelected(true);

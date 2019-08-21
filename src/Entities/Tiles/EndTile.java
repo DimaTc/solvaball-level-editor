@@ -33,7 +33,7 @@ public class EndTile extends Tile {
 
     @Override
     public String toString() {
-        return String.format("e %d %d %d", getIndexX(), getIndexY(), (bounded ? 1 : 0));
+        return String.format("e %d %d", getIndexX(), getIndexY());
 
     }
 }

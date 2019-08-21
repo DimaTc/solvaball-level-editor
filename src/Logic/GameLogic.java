@@ -8,6 +8,7 @@ import Entities.Tiles.*;
 import Handlers.ActionHandler;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class GameLogic {
     private static final Object lock = new Object();
@@ -20,9 +21,12 @@ public class GameLogic {
     private ArrayList<Entity> entities; //probably always will be balls
     private ActionHandler handler;
     private EditModeChangeHandler editHandler;
+    private Stack<TurnVersion> turnHistory;
+
 
     private GameLogic() {
         entities = new ArrayList<>();
+        turnHistory = new Stack<>();
     }
 
     public static GameLogic getInstance() {
@@ -118,6 +122,12 @@ public class GameLogic {
         int moves = 1;
         int startX = selectedBall.getIndexX();
         int startY = selectedBall.getIndexY();
+        int dx = cell.getIndexX() - startX;
+        int dy = cell.getIndexY() - startY;
+        dx = dx == 0 ? 0 : dx / Math.abs(dx) * (Math.abs(dx) - 1);
+        dy = dy == 0 ? 0 : dy / Math.abs(dy) * (Math.abs(dy) - 1);
+        Cell oldCell = mainGrid.getCell(selectedBall.getIndexX(), selectedBall.getIndexY());
+        TurnVersion step = new TurnVersion(oldCell, cell, selectedBall);
         Entity checkSpace = null;
         if (Math.abs(cell.getIndexY() - startY) > 1 || Math.abs(cell.getIndexX() - startX) > 1) {
             //if we need a ball
@@ -133,12 +143,14 @@ public class GameLogic {
                     break;
                 }
             }
-            if (checkSpace == null) {
-                Cell tmpCell = mainGrid.getCell(ballX, ballY);
+            if (checkSpace == null || checkSpace instanceof IceTile) {
+                Cell tmpCell = mainGrid.getCell(selectedBall.getIndexX() + dx, selectedBall.getIndexY() + dy);
                 if (!(tmpCell.getTile() instanceof IceTile)) {
                     Ball ball = new Ball(tmpCell.getX(), tmpCell.getY(),
                             tmpCell.getWidth(), tmpCell.getHeight(), ballX, ballY, 10);
                     ball.setOnActionListener(handler);
+                    step.setBallToDelete(ball);
+                    step.setCellToBeFree(tmpCell);
                     tmpCell.setOccupied(true);
                     entities.add(ball);
                 }
@@ -149,13 +161,14 @@ public class GameLogic {
         Tile tile = cell.getTile();
         if (tile != null) {
 //            if (tile instanceof Tile)
-            moves += ((Tile) tile).getTileCost();
+            moves += tile.getTileCost();
         }
         Cell tmpCell = mainGrid.getCell(startX, startY);
         tmpCell.setOccupied(false);
         cell.setOccupied(true);
         selectedBall.moveTo(cell, moves);
         deselectBall();
+        turnHistory.add(step);
         handler.onRedraw();
     }
 
@@ -173,6 +186,7 @@ public class GameLogic {
                 if (cell.getLineDistance(ball) > 1) //irrelevant with the new design
                     continue;
                 else {
+                    int count = 0;
                     for (int i = 0; i < mainGrid.getSize(); i++) {
                         cellX += dx;
                         cellY += dy;
@@ -181,9 +195,12 @@ public class GameLogic {
                         if (cellX < 0 || cellY < 0)
                             break;
                         Cell newCell = mainGrid.getCell(cellX, cellY);
-                        if (verifyNewCell(cell, newCell))
+                        if (verifyNewCell(cell, newCell)) {
+                            count++;
                             suggested.add(newCell);
-                        if (newCell == null || !(newCell.getTile() instanceof IceTile))
+                        } else
+                            count = count == 1 ? 2 : 0; //count++ if it started to count after 1 loop
+                        if (newCell == null || count > 1 || newCell.isOccupied())
                             break;
 
                     }
@@ -219,10 +236,8 @@ public class GameLogic {
         Tile tile = null;
         switch (type) {
             case END_TILE:
-                if (args != null && args.length > 0)
-                    tile = new EndTile(cell, args[0] == 1);
-                else
-                    tile = new EndTile(cell);
+                if (args != null)
+                    tile = new EndTile(cell, true);
                 break;
             case ICE_TILE:
                 tile = new IceTile(cell);
@@ -249,11 +264,31 @@ public class GameLogic {
     }
 
     public void reset() {
+        turnHistory.clear();
         deselectBall();
         getMainGrid().reset();
         entities.clear();
         setEditMode(true);
         handler.onRedraw();
+    }
+
+    public void undo() {
+        if (turnHistory.size() == 0)
+            return;
+        TurnVersion prevStep = turnHistory.pop();
+        Cell prevCell = prevStep.getOldCell();
+        Ball ball = prevStep.getBall();
+        selectedBall = ball;
+        moveToCell(prevCell);
+        Ball removeBall = prevStep.getBallToDelete();
+        Cell midCell = prevStep.getCellToBeFree();
+        if (removeBall != null && midCell != null) {
+            midCell.setOccupied(false);
+            entities.remove(removeBall);
+        }
+        ball.setMoves(prevStep.getOriginMoves());
+        turnHistory.pop();
+
     }
 
     public interface EditModeChangeHandler {

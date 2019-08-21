@@ -220,6 +220,7 @@ public class CanvasPanel extends Canvas implements ActionHandler {
     @Override
     public void onGridSizeChanged(int newSize) {
         this.gridSize = newSize;
+        cellGrid.setSize(newSize);
         gameLogic.reset();
     }
 }

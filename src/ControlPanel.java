@@ -12,6 +12,7 @@ import java.util.Optional;
 public class ControlPanel extends MenuBar {
 
     private Menu resetMenuButton;
+    private Menu undoMenuButton;
     private Menu modeMenuBtn;
     private Menu saveMenuBtn;
     private Menu loadMenuBtn;
@@ -23,13 +24,14 @@ public class ControlPanel extends MenuBar {
     public ControlPanel() {
         levelManager = LevelManager.getInstance();
         resetMenuButton = new Menu();
+        undoMenuButton = new Menu();
         modeMenuBtn = new Menu("Change Mode...");
         saveMenuBtn = new Menu("Save");
         loadMenuBtn = new Menu("Load");
         tileMenuBtn = new Menu("Tiles...");
         gridSizeMenuBtn = new Menu();
         initButtons();
-        getMenus().addAll(resetMenuButton, modeMenuBtn, saveMenuBtn, loadMenuBtn, tileMenuBtn, gridSizeMenuBtn);
+        getMenus().addAll(resetMenuButton, undoMenuButton, modeMenuBtn, saveMenuBtn, loadMenuBtn, tileMenuBtn, gridSizeMenuBtn);
     }
 
     private void initButtons() {
@@ -46,6 +48,12 @@ public class ControlPanel extends MenuBar {
             }
         });
         resetMenuButton.setGraphic(resetLabel);
+        Label undoLabel = new Label("Undo");
+        undoLabel.setOnMouseClicked(e->{
+            GameLogic.getInstance().undo();
+            actionHandler.onRedraw();
+        });
+        undoMenuButton.setGraphic(undoLabel);
         Label gridSizeLabel = new Label("Grid Size");
         ArrayList<Integer> choices = new ArrayList<>();
         for (int i = 3; i < 8; i++)

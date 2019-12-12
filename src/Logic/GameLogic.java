@@ -144,10 +144,12 @@ public class GameLogic {
                 }
             }
             if (checkSpace == null || checkSpace instanceof IceTile) {
-                Cell tmpCell = mainGrid.getCell(selectedBall.getIndexX() + dx, selectedBall.getIndexY() + dy);
+                int newX = selectedBall.getIndexX() + dx;
+                int newY = selectedBall.getIndexY() + dy;
+                Cell tmpCell = mainGrid.getCell(newX, newY);
                 if (!(tmpCell.getTile() instanceof IceTile)) {
                     Ball ball = new Ball(tmpCell.getX(), tmpCell.getY(),
-                            tmpCell.getWidth(), tmpCell.getHeight(), ballX, ballY, 10);
+                            tmpCell.getWidth(), tmpCell.getHeight(), newX, newY, 10);
                     ball.setOnActionListener(handler);
                     step.setBallToDelete(ball);
                     step.setCellToBeFree(tmpCell);
